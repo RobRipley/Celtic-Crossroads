@@ -2,8 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const multer = require('multer');
-const upload = multer({ dest: 'uploads/' });
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const PORT = 3000;
@@ -26,8 +26,8 @@ const userSchema = new mongoose.Schema({
 
 const tuneSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  composer: { type: String, required: true },
-  fileUrl: { type: String, required: true },
+  rhythm: { type: String, required: true },
+  key: { type: String, required: true },
 });
 
 const User = mongoose.model('User', userSchema);
@@ -68,41 +68,73 @@ app.post('/login', async (req, res) => {
   }
 });
 
-app.post('/upload-tune', upload.single('tune'), async (req, res) => {
-  const { title, composer } = req.body;
-  const tuneFile = req.file;
+app.get('/search-tunes', async (req, res) => {
+  const { query } = req.query;
 
   try {
-    const tune = new Tune({
-      title,
-      composer,
-      fileUrl: tuneFile.path,
+    const tunes = await Tune.find({
+      $or: [
+        { title: { $regex: query, $options: 'i' } },
+        { rhythm: { $regex: query, $options: 'i' } },
+        { key: { $regex: query, $options: 'i' } },
+      ],
     });
 
-    await tune.save();
-
-    res.status(201).json({ message: 'Tune uploaded successfully' });
+    res.status(200).json({ tunes });
   } catch (error) {
     res.status(500).json({ message: 'An error occurred' });
   }
 });
 
 app.post('/add-tune-to-tunebook', async (req, res) => {
-    const { userId, tuneId } = req.body;
-  
-    try {
-      const user = await User.findById(userId);
-      const tune = await Tune.findById(tuneId);
-  
-      if (!user || !tune) {
-        res.status(404).json({ message: 'User or tune not found' });
-      } else {
-        user.tunebook.push(tune);
-        await user.save();
-  
-        res.status(200).json({ message: 'Tune added to tunebook' });
-      }
-    } catch (error) {
-      res.status(500).json({ message: 'An error occurred' });
+  const { userId, tuneId } = req.body;
+
+  try {
+    const user = await User.findById(userId);
+    const tune = await Tune.findById(tuneId);
+
+    if (!user || !tune) {
+      res.status(404).json({ message: 'User or tune not found' });
+    } else {
+      user.tunebook.push(tune);
+      await user.save();
+
+      res.status(200).json({ message: 'Tune added to tunebook' });
     }
-  });
+  } catch (error) {
+    res.status(500).json({ message: 'An error occurred' });
+  }
+});
+
+// Function to read .abc files from a directory and save tunes to the database
+const readABCFiles = async () => {
+  const abcDirectory = '/Users/robertripley/code_projects/celtic-crossroads/tuneABCs';
+
+  try {
+    const files = fs.readdirSync(abcDirectory);
+
+    for (const file of files) {
+      const filePath = path.join(abcDirectory, file);
+      const fileData = fs.readFileSync(filePath, 'utf-8');
+      const lines = fileData.split('\n');
+
+      const title = lines[1].substring(3).trim();
+      const rhythm = lines[4].substring(3).trim();
+      const key = lines[6].substring(3).trim();
+
+      const tune = new Tune({ title, rhythm, key });
+      await tune.save();
+    }
+
+    console.log('Tunes added to the database');
+  } catch (error) {
+    console.error('Error reading ABC files:', error);
+  }
+};
+
+// Call the function to read ABC files and save tunes to the database
+readABCFiles();
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
