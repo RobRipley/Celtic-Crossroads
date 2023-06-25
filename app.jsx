@@ -23,7 +23,7 @@ const App = () => {
 
   const registerUser = async () => {
     try {
-      await axios.post('http://localhost:3000/register', {
+      await axios.post('/register', {
         username,
         password,
         name,
@@ -38,7 +38,7 @@ const App = () => {
 
   const loginUser = async () => {
     try {
-      const response = await axios.post('http://localhost:3000/login', {
+      const response = await axios.post('/login', {
         username,
         password,
       });
@@ -51,7 +51,7 @@ const App = () => {
 
   const searchTunes = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/search-tunes', {
+      const response = await axios.get('/search-tunes', {
         params: { query: tuneSearchQuery },
       });
       setTuneSearchResults(response.data.tunes);
@@ -62,7 +62,7 @@ const App = () => {
 
   const addTuneToTunebook = async (tuneId) => {
     try {
-      await axios.post('http://localhost:3000/add-tune-to-tunebook', {
+      await axios.post('/add-tune-to-tunebook', {
         userId: token, // Assuming the user ID is stored in the token
         tuneId,
       });
@@ -75,7 +75,7 @@ const App = () => {
 
   const fetchTunebook = async () => {
     try {
-      const response = await axios.get(`http://localhost:3000/user/${token}/tunebook`);
+      const response = await axios.get(`/user/${token}/tunebook`);
       setTunebook(response.data.tunebook);
     } catch (error) {
       console.error('Error fetching tunebook:', error);
@@ -84,7 +84,7 @@ const App = () => {
 
   const fetchFriends = async () => {
     try {
-      const response = await axios.get(`http://localhost:3000/user/${token}/friends`);
+      const response = await axios.get(`/user/${token}/friends`);
       setFriends(response.data.friends);
     } catch (error) {
       console.error('Error fetching friends:', error);

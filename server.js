@@ -6,12 +6,11 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 5001;
 
 mongoose.connect('mongodb://localhost:27017/myapp', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  useCreateIndex: true,
 }).then(() => {
   console.log('Connected to MongoDB');
 }).catch((error) => {
